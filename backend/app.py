@@ -18,6 +18,7 @@ def upload_file():
         # Read CSV file with pandas
         df = pd.read_csv(file, delimiter=';')
         print(df.head())  # Print first 5 rows in the console to check
+        print("okay")  # Print first 5 rows in the console to check
 
         # Convert DataFrame to JSON
         data = df.to_dict(orient='records')

@@ -1,13 +1,18 @@
-import React from 'react';
-import './App.css';
-import FileUpload from './components/FileUpload';
+import React, { useState } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import FileUpload from "./components/FileUpload";
+import Dashboard from "./components/Dashboard";
 
 function App() {
+  const [uploadedData, setUploadedData] = useState(null);
+
   return (
-    <div className="App">
-      <h1>Data Visualization MVP</h1>
-      <FileUpload />
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<FileUpload setUploadedData={setUploadedData} />} />
+        <Route path="/dashboard" element={<Dashboard uploadedData={uploadedData} />} />
+      </Routes>
+    </Router>
   );
 }
 

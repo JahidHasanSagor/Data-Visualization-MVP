@@ -23,7 +23,7 @@ const FileUpload = ({ setUploadedData }) => {
       .post("http://127.0.0.1:5000/api/upload", formData)
       .then((response) => {
         if (setUploadedData) {
-          setUploadedData(response.data); // Ensure the function exists before calling
+          setUploadedData(response.data);
           navigate("/dashboard");
         } else {
           console.error("setUploadedData is not defined");
@@ -37,18 +37,23 @@ const FileUpload = ({ setUploadedData }) => {
   };
 
   return (
-    <div className="p-6 max-w-lg mx-auto bg-gray-900 text-gray-100 rounded-xl shadow-lg space-y-4">
-      <h2 className="text-2xl font-bold text-center">Upload CSV File</h2>
+    <div className="p-6 max-w-lg mx-auto bg-gray-800 text-gray-100 rounded-xl shadow-lg space-y-4 mt-6">
+      <h2 className="text-2xl font-bold text-center mb-6">Upload CSV File</h2>
       <div className="text-center">
         <input
           type="file"
           accept=".csv"
           onChange={handleFileChange}
-          className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer mx-auto"
+          className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 
+                   file:rounded-full file:border-0 file:text-sm file:font-semibold
+                   file:bg-emerald-50 file:text-emerald-700
+                   hover:file:bg-emerald-100 cursor-pointer
+                   border rounded-lg border-gray-600 p-2"
         />
         <button
           onClick={handleUpload}
-          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          className="mt-6 px-6 py-2 bg-emerald-600 text-white rounded-lg 
+                   hover:bg-emerald-700 transition-colors duration-200"
         >
           Upload
         </button>

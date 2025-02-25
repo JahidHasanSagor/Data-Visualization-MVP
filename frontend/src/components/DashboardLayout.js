@@ -1,23 +1,17 @@
 import React, { useState } from "react";
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
-import Dashboard from "./Dashboard"; // Main content area
 
-const DashboardLayout = () => {
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
+const DashboardLayout = ({ children }) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
-    <div className="flex h-screen">
-      {/* Sidebar */}
+    <div className="flex min-h-screen bg-slate-50">
       <Sidebar isOpen={isSidebarOpen} />
-
-      <div className="flex-1 flex flex-col">
-        {/* Navbar */}
-        <Navbar toggleSidebar={() => setSidebarOpen(!isSidebarOpen)} />
-
-        {/* Main Content */}
-        <main className="p-6 bg-gray-900 text-white flex-1 overflow-auto">
-          <Dashboard />
+      <div className="flex flex-col flex-grow">
+        <Navbar onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
+        <main className="flex-grow p-6">
+          {children}
         </main>
       </div>
     </div>

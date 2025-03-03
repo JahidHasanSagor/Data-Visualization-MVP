@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Dashboard - {{ branding.company_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Dynamic CSS variables -->
+    {{ css_variables|safe }}
+    
+    <!-- Include GridStack for drag-and-drop functionality -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@7.2.3/dist/gridstack.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/gridstack@7.2.3/dist/gridstack-all.js"></script>
+    <!-- Include Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+</head>
+<body>
+    <header>
+        {{ header_html|safe }}
+        <div class="dashboard-controls">
+            <div class="period-selector">
+                <label for="period">Time Period:</label>
+                <select id="period" onchange="updateDashboard()">
+                    <option value="7">Last 7 Days</option>
+                    <option value="30" selected>Last 30 Days</option>
+                    <option value="90">Last 90 Days</option>
+                </select>
+            </div>
+            <div class="template-selector">
+                <label for="template">Template:</label>
+                <select id="template" onchange="loadTemplate()">
+                    <option value="">Custom</option>
+                    <option value="SEO">SEO Dashboard</option>
+                    <option value="PPC">PPC Dashboard</option>
+                    <option value="Social Media">Social Media Dashboard</option>
+                    <option value="Ecommerce">Ecommerce Dashboard</option>
+                </select>
+            </div>
+            <button id="add-widget-btn" class="btn primary">Add Widget</button>
+            <button id="add-kpi-btn" class="btn secondary">Add KPI</button>
+            <button id="save-layout-btn" class="btn primary">Save Layout</button>
+            <button id="export-pdf-btn" class="btn secondary">Export PDF</button>
+            <a href="/settings" class="btn">Settings</a>
+        </div>
+    </header>
+
+    <main class="dashboard-container">
+        <section class="kpi-summary">
+            <h2>Key Performance Indicators</h2>
+            <div id="kpi-cards" class="kpi-cards">
+                <!-- KPI cards will be added here dynamically -->
+            </div>
+        </section>
+
+        <section class="dashboard-grid">
+            <div class="grid-stack"></div>
+        </section>
+
+        <!-- Widget Add Modal -->
+        <div id="widget-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Add Widget</h2>
+                <form id="widget-form">
+                    <div class="form-group">
+                        <label for="widget-type">Widget Type:</label>
+                        <select id="widget-type" required>
+                            <option value="line">Line Chart</option>
+                            <option value="bar">Bar Chart</option>
+                            <option value="pie">Pie Chart</option>
+                            <option value="area">Area Chart</option>
+                            <option value="table">Table</option>
+                            <option value="text">Text</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="widget-content">Content:</label>
+                        <select id="widget-content" required>
+                            <option value="sessions">Sessions</option>
+                            <option value="users">Users</option>
+                            <option value="pageviews">Pageviews</option>
+                            <option value="bounce_rate">Bounce Rate</option>
+                            <option value="conversion_rate">Conversion Rate</option>
+                            <option value="revenue">Revenue</option>
+                            <option value="impressions">Impressions</option>
+                            <option value="clicks">Clicks</option>
+                            <option value="ctr">CTR</option>
+                            <option value="cost">Cost</option>
+                            <option value="conversions">Conversions</option>
+                            <option value="orders">Orders</option>
+                            <option value="products">Products</option>
+                            <option value="engagement">Engagement</option>
+                            <option value="metrics">All Metrics</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="widget-size">Size:</label>
+                        <select id="widget-size">
+                            <option value="small">Small (4x2)</option>
+                            <option value="medium" selected>Medium (6x3)</option>
+                            <option value="large">Large (12x3)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn primary">Add Widget</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- KPI Add Modal -->
+        <div id="kpi-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Add Custom KPI</h2>
+                <form id="kpi-form">
+                    <div class="form-group">
+                        <label for="kpi-name">KPI Name:</label>
+                        <input type="text" id="kpi-name" required placeholder="e.g., Cost per Conversion">
+                    </div>
+                    <div class="form-group">
+                        <label for="kpi-formula">Formula:</label>
+                        <input type="text" id="kpi-formula" required placeholder="e.g., cost/conversions">
+                    </div>
+                    <div class="form-group">
+                        <p>Available Metrics:</p>
+                        <div class="available-metrics">
+                            <span class="metric-tag">sessions</span>
+                            <span class="metric-tag">users</span>
+                            <span class="metric-tag">pageviews</span>
+                            <span class="metric-tag">bounce_rate</span>
+                            <span class="metric-tag">conversion_rate</span>
+                            <span class="metric-tag">revenue</span>
+                            <span class="metric-tag">impressions</span>
+                            <span class="metric-tag">clicks</span>
+                            <span class="metric-tag">ctr</span>
+                            <span class="metric-tag">cost</span>
+                            <span class="metric-tag">conversions</span>
+                            <span class="metric-tag">orders</span>
+                            <span class="metric-tag">products</span>
+                            <span class="metric-tag">engagement</span>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn primary">Add KPI</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        {{ footer_html|safe }}
+    </footer>
+
+    <script>
+        // Dashboard data and state
+        let dashboardData = null;
+        let grid = null;
+        let charts = {};
+        const userId = "1"; // Default user ID, would be dynamic in a real app
+
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeGridStack();
+            fetchDashboardData();
+            setupEventListeners();
+        });
+
+        // Initialize GridStack
+        function initializeGridStack() {
+            grid = GridStack.init({
+                column: 12,
+                cellHeight: 80,
+                animate: true,
+                resizable: {
+                    handles: 'e,se,s,sw,w'
+                },
+                draggable: {
+                    handle: '.widget-header'
+                }
+            });
+
+            // Listen for changes to save state
+            grid.on('change', function() {
+                // Update layout when widgets are moved or resized
+                console.log('Grid layout changed');
+            });
+        }
+
+        // Fetch dashboard data from API
+        function fetchDashboardData() {
+            const period = document.getElementById('period').value;
+            
+            fetch(`/api/dashboard-data?days=${period}&user_id=${userId}`)
+                .then(response => response.json())
+                .then(data => {
+                    dashboardData = data;
+                    renderDashboard();
+                })
+                .catch(error => {
+                    console.error('Error fetching dashboard data:', error);
+                    alert('Failed to load dashboard data. Please try again.');
+                });
+        }
+
+        // Render the dashboard with the fetched data
+        function renderDashboard() {
+            if (!dashboardData) return;
+            
+            // Clear existing widgets
+            grid.removeAll();
+            charts = {};
+            
+            // Render KPI cards
+            renderKPICards();
+            
+            // Render saved layout or default layout
+            if (dashboardData.layouts && dashboardData.layouts.length > 0) {
+                renderSavedLayout();
+            } else {
+                renderDefaultLayout();
+            }
+        }
+
+        // Render KPI cards
+        function renderKPICards() {
+            const kpiContainer = document.getElementById('kpi-cards');
+            kpiContainer.innerHTML = '';
+            
+            // Add KPIs from the data
+            if (dashboardData.kpis && dashboardData.kpis.length > 0) {
+                dashboardData.kpis.forEach(kpi => {
+                    const kpiValue = dashboardData.totals[kpi.name] || 0;
+                    const formattedValue = formatValue(kpiValue);
+                    
+                    const kpiCard = document.createElement('div');
+                    kpiCard.className = 'kpi-card';
+                    kpiCard.innerHTML = `
+                        <h3>${kpi.name}</h3>
+                        <p class="kpi-value">${formattedValue}</p>
+                        <p class="kpi-formula">Formula: ${kpi.formula}</p>
+                    `;
+                    kpiContainer.appendChild(kpiCard);
+                });
+            } else {
+                // Add some default KPIs if none exist
+                const defaultKpis = [
+                    { name: 'Sessions', value: dashboardData.totals.sessions || 0 },
+                    { name: 'Pageviews', value: dashboardData.totals.pageviews || 0 },
+                    { name: 'Conversion Rate', value: dashboardData.totals.conversion_rate || 0 }
+                ];
+                
+                defaultKpis.forEach(kpi => {
+                    const kpiCard = document.createElement('div');
+                    kpiCard.className = 'kpi-card';
+                    kpiCard.innerHTML = `
+                        <h3>${kpi.name}</h3>
+                        <p class="kpi-value">${formatValue(kpi.value)}</p>
+                    `;
+                    kpiContainer.appendChild(kpiCard);
+                });
+            }
+        }
+
+        // Render saved layout
+        function renderSavedLayout() {
+            dashboardData.layouts.forEach(widget => {
+                addWidget(widget.type, widget.content, widget.x, widget.y, widget.w, widget.h);
+            });
+        }
+
+        // Render default layout
+        function renderDefaultLayout() {
+            // Add some default widgets
+            addWidget('line', 'sessions', 0, 0, 6, 3);
+            addWidget('bar', 'pageviews', 6, 0, 6, 3);
+            addWidget('pie', 'users', 0, 3, 4, 3);
+            addWidget('table', 'metrics', 4, 3, 8, 3);
+        }
+
+        // Add a widget to the grid
+        function addWidget(type, content, x, y, w, h) {
+            const widgetId = `widget-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+            
+            const widget = document.createElement('div');
+            widget.className = 'grid-stack-item';
+            widget.innerHTML = `
+                <div class="grid-stack-item-content widget">
+                    <div class="widget-header">
+                        <h3>${formatTitle(content)}</h3>
+                        <div class="widget-controls">
+                            <button class="widget-refresh" onclick="refreshWidget('${widgetId}')">↻</button>
+                            <button class="widget-remove" onclick="removeWidget('${widgetId}')">×</button>
+                        </div>
+                    </div>
+                    <div class="widget-body">
+                        <div id="${widgetId}" class="chart-container"></div>
+                    </div>
+                </div>
+            `;
+            
+            const node = { x, y, w, h, id: widgetId };
+            grid.addWidget(widget, node);
+            
+            // Render the widget content
+            setTimeout(() => {
+                renderWidgetContent(widgetId, type, content);
+            }, 100);
+            
+            return widgetId;
+        }
+
+        // Render the content of a widget
+        function renderWidgetContent(widgetId, type, content) {
+            const container = document.getElementById(widgetId);
+            if (!container) return;
+            
+            if (type === 'table') {
+                renderTable(container, content);
+            } else {
+                renderChart(container, widgetId, type, content);
+            }
+        }
+
+        // Render a chart in a widget
+        function renderChart(container, widgetId, type, content) {
+            if (charts[widgetId]) {
+                charts[widgetId].destroy();
+            }
+            
+            const chartData = prepareChartData(content);
+            const chartType = mapChartType(type);
+            
+            const canvas = document.createElement('canvas');
+            container.innerHTML = '';
+            container.appendChild(canvas);
+            
+            const ctx = canvas.getContext('2d');
+            charts[widgetId] = new Chart(ctx, {
+                type: chartType,
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: formatTitle(content)
+                        }
+                    }
+                }
+            });
+        }
+
+        // Render a table in a widget
+        function renderTable(container, content) {
+            container.innerHTML = '';
+            
+            if (content === 'metrics') {
+                // Render all metrics in a table
+                const table = document.createElement('table');
+                table.className = 'metrics-table';
+                
+                // Create table header
+                const thead = document.createElement('thead');
+                const headerRow = document.createElement('tr');
+                headerRow.innerHTML = `
+                    <th>Date</th>
+                    <th>Sessions</th>
+                    <th>Users</th>
+                    <th>Pageviews</th>
+                    <th>Conv. Rate</th>
+                    <th>Revenue</th>
+                `;
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+                
+                // Create table body
+                const tbody = document.createElement('tbody');
+                if (dashboardData.metrics && dashboardData.metrics.length > 0) {
+                    dashboardData.metrics.forEach(day => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${formatDate(day.date)}</td>
+                            <td>${formatValue(day.sessions)}</td>
+                            <td>${formatValue(day.users)}</td>
+                            <td>${formatValue(day.pageviews)}</td>
+                            <td>${formatValue(day.conversion_rate)}%</td>
+                            <td>${formatCurrency(day.revenue)}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+                table.appendChild(tbody);
+                container.appendChild(table);
+            } else {
+                // Render a specific metric in a table
+                const table = document.createElement('table');
+                table.className = 'metrics-table';
+                
+                // Create table header
+                const thead = document.createElement('thead');
+                const headerRow = document.createElement('tr');
+                headerRow.innerHTML = `
+                    <th>Date</th>
+                    <th>${formatTitle(content)}</th>
+                `;
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+                
+                // Create table body
+                const tbody = document.createElement('tbody');
+                if (dashboardData.metrics && dashboardData.metrics.length > 0) {
+                    dashboardData.metrics.forEach(day => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${formatDate(day.date)}</td>
+                            <td>${formatValue(day[content])}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+                table.appendChild(tbody);
+                container.appendChild(table);
+            }
+        }
+
+        // Prepare data for charts
+        function prepareChartData(content) {
+            const labels = [];
+            const values = [];
+            
+            if (dashboardData.metrics && dashboardData.metrics.length > 0) {
+                dashboardData.metrics.forEach(day => {
+                    labels.push(formatDate(day.date));
+                    values.push(day[content] || 0);
+                });
+            }
+            
+            return {
+                labels: labels,
+                datasets: [{
+                    label: formatTitle(content),
+                    data: values,
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(255, 206, 86, 0.2)',
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(153, 102, 255, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            };
+        }
+
+        // Map widget type to Chart.js chart type
+        function mapChartType(type) {
+            const typeMap = {
+                'line': 'line',
+                'bar': 'bar',
+                'pie': 'pie',
+                'area': 'line' // Area chart is a line chart with fill
+            };
+            
+            if (type === 'area') {
+                // For area charts, we'll modify the dataset in prepareChartData
+                return 'line';
+            }
+            
+            return typeMap[type] || 'line';
+        }
+
+        // Format a title from a content key
+        function formatTitle(content) {
+            if (!content) return '';
+            
+            // Replace underscores with spaces and capitalize each word
+            return content
+                .split('_')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+        }
+
+        // Format a value based on its type
+        function formatValue(value) {
+            if (value === undefined || value === null) return '-';
+            
+            if (typeof value === 'number') {
+                if (Number.isInteger(value)) {
+                    return value.toLocaleString();
+                } else {
+                    return value.toFixed(2);
+                }
+            }
+            
+            return value;
+        }
+
+        // Format a currency value
+        function formatCurrency(value) {
+            if (value === undefined || value === null) return '-';
+            
+            return '$' + parseFloat(value).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+        }
+
+        // Format a date string
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            
+            const date = new Date(dateStr);
+            return date.toLocaleDateString();
+        }
+
+        // Refresh a widget
+        function refreshWidget(widgetId) {
+            const widget = grid.engine.nodes.find(n => n.id === widgetId);
+            if (widget) {
+                const content = widget.el.querySelector('.widget-header h3').textContent.toLowerCase().replace(/ /g, '_');
+                const chartContainer = widget.el.querySelector('.chart-container');
+                const type = determineWidgetType(widget.el);
+                
+                renderWidgetContent(widgetId, type, content);
+            }
+        }
+
+        // Determine widget type from its content
+        function determineWidgetType(widgetEl) {
+            const chartContainer = widgetEl.querySelector('.chart-container');
+            if (!chartContainer) return 'unknown';
+            
+            if (chartContainer.querySelector('table')) {
+                return 'table';
+            }
+            
+            const canvas = chartContainer.querySelector('canvas');
+            if (!canvas) return 'unknown';
+            
+            const chartId = chartContainer.id;
+            const chart = charts[chartId];
+            
+            if (!chart) return 'unknown';
+            
+            return chart.config.type === 'line' ? 'line' : chart.config.type;
+        }
+
+        // Remove a widget
+        function removeWidget(widgetId) {
+            if (confirm('Are you sure you want to remove this widget?')) {
+                const widget = grid.engine.nodes.find(n => n.id === widgetId);
+                if (widget) {
+                    grid.removeWidget(widget.el);
+                    
+                    if (charts[widgetId]) {
+                        charts[widgetId].destroy();
+                        delete charts[widgetId];
+                    }
+                }
+            }
+        }
+
+        // Load a template
+        function loadTemplate() {
+            const templateName = document.getElementById('template').value;
+            if (!templateName) return;
+            
+            if (dashboardData.templates && dashboardData.templates[templateName]) {
+                if (confirm(`Are you sure you want to load the ${templateName} template? This will replace your current layout.`)) {
+                    // Clear existing widgets
+                    grid.removeAll();
+                    charts = {};
+                    
+                    // Add template widgets
+                    const template = dashboardData.templates[templateName];
+                    template.forEach(widget => {
+                        addWidget(widget.type, widget.content, widget.x, widget.y, widget.w, widget.h);
+                    });
+                }
+            }
+        }
+
+        // Save the current layout
+        function saveLayout() {
+            const layout = [];
+            
+            grid.engine.nodes.forEach(node => {
+                const widgetEl = node.el;
+                const headerText = widgetEl.querySelector('.widget-header h3').textContent;
+                const content = headerText.toLowerCase().replace(/ /g, '_');
+                const type = determineWidgetType(widgetEl);
+                
+                layout.push({
+                    type: type,
+                    content: content,
+                    x: node.x,
+                    y: node.y,
+                    w: node.w,
+                    h: node.h
+                });
+            });
+            
+            fetch(`/api/save-layout?user_id=${userId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(layout)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'saved') {
+                    alert('Layout saved successfully!');
+                } else {
+                    alert('Failed to save layout.');
+                }
+            })
+            .catch(error => {
+                console.error('Error saving layout:', error);
+                alert('Failed to save layout. Please try again.');
+            });
+        }
+
+        // Add a new KPI
+        function addKPI() {
+            const name = document.getElementById('kpi-name').value;
+            const formula = document.getElementById('kpi-formula').value;
+            
+            if (!name || !formula) {
+                alert('Please enter both a name and formula for the KPI.');
+                return;
+            }
+            
+            fetch('/api/add-kpi', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: name,
+                    formula: formula,
+                    user_id: userId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'added') {
+                    alert('KPI added successfully!');
+                    closeModal('kpi-modal');
+                    fetchDashboardData(); // Refresh dashboard data
+                } else {
+                    alert('Failed to add KPI.');
+                }
+            })
+            .catch(error => {
+                console.error('Error adding KPI:', error);
+                alert('Failed to add KPI. Please try again.');
+            });
+        }
+
+        // Export dashboard as PDF
+        function exportPDF() {
+            alert('PDF export functionality will be implemented here.');
+            // In a real implementation, this would capture the dashboard and generate a PDF
+        }
+
+        // Update the dashboard when period changes
+        function updateDashboard() {
+            fetchDashboardData();
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Add widget button
+            document.getElementById('add-widget-btn').addEventListener('click', function() {
+                openModal('widget-modal');
+            });
+            
+            // Add KPI button
+            document.getElementById('add-kpi-btn').addEventListener('click', function() {
+                openModal('kpi-modal');
+            });
+            
+            // Save layout button
+            document.getElementById('save-layout-btn').addEventListener('click', saveLayout);
+            
+            // Export PDF button
+            document.getElementById('export-pdf-btn').addEventListener('click', exportPDF);
+            
+            // Widget form submission
+            document.getElementById('widget-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const type = document.getElementById('widget-type').value;
+                const content = document.getElementById('widget-content').value;
+                const size = document.getElementById('widget-size').value;
+                
+                let w = 6, h = 3; // Default medium size
+                
+                if (size === 'small') {
+                    w = 4; h = 2;
+                } else if (size === 'large') {
+                    w = 12; h = 3;
+                }
+                
+                addWidget(type, content, 0, 0, w, h);
+                closeModal('widget-modal');
+            });
+            
+            // KPI form submission
+            document.getElementById('kpi-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                addKPI();
+            });
+            
+            // Close buttons for modals
+            document.querySelectorAll('.close').forEach(function(closeBtn) {
+                closeBtn.addEventListener('click', function() {
+                    const modal = this.closest('.modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                    }
+                });
+            });
+            
+            // Click on metric tags to add to formula
+            document.querySelectorAll('.metric-tag').forEach(function(tag) {
+                tag.addEventListener('click', function() {
+                    const formulaInput = document.getElementById('kpi-formula');
+                    formulaInput.value += formulaInput.value ? '+' + this.textContent : this.textContent;
+                });
+            });
+            
+            // Close modal when clicking outside
+            window.addEventListener('click', function(event) {
+                if (event.target.classList.contains('modal')) {
+                    event.target.style.display = 'none';
+                }
+            });
+        }
+
+        // Open a modal
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'block';
+            }
+        }
+
+        // Close a modal
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html> 

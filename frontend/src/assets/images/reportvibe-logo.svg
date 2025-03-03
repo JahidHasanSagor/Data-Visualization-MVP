@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 50">
+  <style>
+    .logo-text { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 24px; }
+    .primary { fill: #7b3fe4; }
+    .accent { fill: #ff6b6b; }
+  </style>
+  <text x="10" y="35" class="logo-text primary">Report<tspan class="accent">Vibe</tspan></text>
+  <circle cx="180" cy="25" r="15" class="primary" opacity="0.8" />
+  <circle cx="165" cy="25" r="10" class="accent" opacity="0.8" />
+</svg> 

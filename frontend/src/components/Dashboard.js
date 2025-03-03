@@ -9,8 +9,13 @@ import {
   Title,
   Tooltip,
   Legend,
+  ArcElement,
 } from 'chart.js';
-import { Bar, Line } from 'react-chartjs-2';
+import { Bar, Line, Pie, Scatter } from 'react-chartjs-2';
+import ExportButton from './ExportButton';
+import ExportDropdown from './ExportDropdown';
+import AdvancedFilter from './AdvancedFilter';
+import { useAuth } from '../contexts/AuthContext';
 
 // Register ChartJS components
 ChartJS.register(
@@ -19,6 +24,7 @@ ChartJS.register(
   PointElement,
   LineElement,
   BarElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend
@@ -26,37 +32,50 @@ ChartJS.register(
 
 const Dashboard = ({ uploadedData, dateRange }) => {
   const [chartData, setChartData] = useState(null);
+  const [filteredData, setFilteredData] = useState([]);
+  const auth = useAuth();
+  const currentUser = auth?.currentUser; // Safe access
 
   useEffect(() => {
     if (uploadedData && uploadedData.length > 0) {
-      let filteredData = uploadedData;
+      let processedData = uploadedData;
 
       // Filter by date range if available
       if (dateRange?.[0] && dateRange?.[1]) {
-        filteredData = uploadedData.filter((item) => {
+        processedData = uploadedData.filter((item) => {
           const itemDate = new Date(item.date);
           return itemDate >= dateRange[0] && itemDate <= dateRange[1];
         });
       }
 
-      const dataKeys = Object.keys(filteredData[0] || {});
-      const labels = filteredData.map((item) => item[dataKeys[0]] || "Unknown");
-      const values = filteredData.map((item) => parseFloat(item[dataKeys[1]]) || 0);
-
-      setChartData({
-        labels: labels,
-        datasets: [
-          {
-            label: dataKeys[1] || "Data",
-            data: values,
-            backgroundColor: "#4ADE80",
-            borderColor: "#22C55E",
-            borderWidth: 1,
-          },
-        ],
-      });
+      setFilteredData(processedData);
+      updateChartData(processedData);
     }
   }, [uploadedData, dateRange]);
+
+  const updateChartData = (data) => {
+    const dataKeys = Object.keys(data[0] || {});
+    const labels = data.map((item) => item[dataKeys[0]] || "Unknown");
+    const values = data.map((item) => parseFloat(item[dataKeys[1]]) || 0);
+
+    setChartData({
+      labels: labels,
+      datasets: [
+        {
+          label: dataKeys[1] || "Data",
+          data: values,
+          backgroundColor: "#4ADE80",
+          borderColor: "#22C55E",
+          borderWidth: 1,
+        },
+      ],
+    });
+  };
+
+  const handleFilterChange = (newFilteredData) => {
+    setFilteredData(newFilteredData);
+    updateChartData(newFilteredData);
+  };
 
   if (!uploadedData || uploadedData.length === 0) {
     return (
@@ -91,22 +110,32 @@ const Dashboard = ({ uploadedData, dateRange }) => {
     <div className="bg-slate-50 p-6">
       <header className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Analytics Dashboard</h1>
-        <div className="text-sm text-gray-600">
-          Last updated: {new Date().toLocaleDateString()}
+        <div className="flex items-center space-x-4">
+          {/* Only show export if user is logged in */}
+          {currentUser && <ExportDropdown data={filteredData} fileName="dashboard-data" />}
+          <div className="text-sm text-gray-600">
+            Last updated: {new Date().toLocaleDateString()}
+          </div>
         </div>
       </header>
+
+      {/* Advanced Filter */}
+      <AdvancedFilter data={uploadedData} onFilterChange={handleFilterChange} />
 
       {chartData && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-7xl mx-auto">
           {/* Card 1 - Total Revenue */}
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all">
-            <h3 className="text-lg font-semibold text-gray-800">Total Revenue</h3>
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-800">Total Revenue</h3>
+              <ExportButton elementId="revenue-chart" fileName="revenue" />
+            </div>
             <p className="text-3xl font-bold my-3 text-emerald-600">
               ${chartData.datasets[0].data
                 .reduce((a, b) => a + b, 0)
                 .toLocaleString()}
             </p>
-            <div className="h-48 mt-4">
+            <div className="h-48 mt-4" id="revenue-chart">
               <Line
                 data={{
                   ...chartData,
@@ -126,11 +155,14 @@ const Dashboard = ({ uploadedData, dateRange }) => {
 
           {/* Card 2 - Total Clicks */}
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all">
-            <h3 className="text-lg font-semibold text-gray-800">Total Clicks</h3>
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-800">Total Clicks</h3>
+              <ExportButton elementId="clicks-chart" fileName="clicks" />
+            </div>
             <p className="text-3xl font-bold my-3 text-blue-600">
               {(chartData.datasets[0].data.length * 100).toLocaleString()}
             </p>
-            <div className="h-48 mt-4">
+            <div className="h-48 mt-4" id="clicks-chart">
               <Bar
                 data={{
                   ...chartData,
@@ -149,16 +181,17 @@ const Dashboard = ({ uploadedData, dateRange }) => {
 
           {/* Card 3 - Average Conversions */}
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all">
-            <h3 className="text-lg font-semibold text-gray-800">
-              Average Conversions
-            </h3>
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-800">Average Conversions</h3>
+              <ExportButton elementId="conversions-chart" fileName="conversions" />
+            </div>
             <p className="text-3xl font-bold my-3 text-purple-600">
               {Math.round(
                 chartData.datasets[0].data.reduce((a, b) => a + b, 0) /
                   chartData.datasets[0].data.length
               ).toLocaleString()}
             </p>
-            <div className="h-48 mt-4">
+            <div className="h-48 mt-4" id="conversions-chart">
               <Line
                 data={{
                   ...chartData,
@@ -178,13 +211,14 @@ const Dashboard = ({ uploadedData, dateRange }) => {
 
           {/* Card 4 - Performance Metrics */}
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all">
-            <h3 className="text-lg font-semibold text-gray-800">
-              Performance Metrics
-            </h3>
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-800">Performance Metrics</h3>
+              <ExportButton elementId="performance-chart" fileName="performance" />
+            </div>
             <p className="text-3xl font-bold my-3 text-orange-600">
               {chartData.datasets[0].data.length}
             </p>
-            <div className="h-48 mt-4">
+            <div className="h-48 mt-4" id="performance-chart">
               <Bar
                 data={{
                   ...chartData,
@@ -197,6 +231,39 @@ const Dashboard = ({ uploadedData, dateRange }) => {
                   ],
                 }}
                 options={chartOptions}
+              />
+            </div>
+          </div>
+
+          {/* Card 5 - Category Distribution (Pie Chart) */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-800">Category Distribution</h3>
+              <ExportButton elementId="category-chart" fileName="categories" />
+            </div>
+            <div className="h-48 mt-4" id="category-chart">
+              <Pie
+                data={{
+                  labels: chartData.labels.slice(0, 5),
+                  datasets: [
+                    {
+                      data: chartData.datasets[0].data.slice(0, 5),
+                      backgroundColor: [
+                        '#10b981', '#3b82f6', '#9333ea', '#f97316', '#ef4444'
+                      ],
+                      borderWidth: 1,
+                    },
+                  ],
+                }}
+                options={{
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: { 
+                      position: 'right',
+                      labels: { color: '#64748b' }
+                    },
+                  },
+                }}
               />
             </div>
           </div>

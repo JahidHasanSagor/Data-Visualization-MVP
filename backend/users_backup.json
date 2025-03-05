@@ -1,0 +1,10 @@
+{
+    "test@example.com": {
+        "name": "Test User",
+        "password": "pbkdf2:sha256:150000$KKgd0xN5$d778b27800d8b389e9b84b41f0c95523d16a072cb8075235eb6ab7d916872a58",
+        "google_client_id": "",
+        "google_client_secret": "",
+        "meta_app_id": "",
+        "meta_app_secret": ""
+    }
+}

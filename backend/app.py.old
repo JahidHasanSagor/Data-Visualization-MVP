@@ -14,7 +14,6 @@ load_dotenv()
 from blueprints.auth import auth_bp
 from blueprints.integrations import integrations_bp
 from blueprints.user import user_bp
-from blueprints.upload import upload_bp
 
 # Create Flask app
 app = Flask(__name__)
@@ -46,7 +45,6 @@ CORS(app, resources={
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(integrations_bp, url_prefix='/api/integrations')
 app.register_blueprint(user_bp, url_prefix='/api/user')
-app.register_blueprint(upload_bp, url_prefix='/api/upload')
 
 # Simple test route
 @app.route('/api/test', methods=['GET'])
@@ -54,7 +52,8 @@ def test_api():
     return {'message': 'API is working!'}, 200
 
 # Create database tables
-with app.app_context():
+@app.before_first_request
+def create_tables():
     db.create_all()
 
 if __name__ == '__main__':

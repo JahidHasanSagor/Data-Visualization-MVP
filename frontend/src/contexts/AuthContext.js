@@ -50,14 +50,24 @@ export const AuthProvider = ({ children }) => {
   
   const login = async (email, password) => {
     try {
+      console.log('Attempting login for:', email);
       const response = await axios.post('http://127.0.0.1:5000/api/auth/login', {
         email,
         password
       });
       
       const { token, user } = response.data;
+      console.log('Login successful, token received:', token ? 'Token exists' : 'No token');
+      console.log('Token first 10 chars:', token ? token.substring(0, 10) + '...' : 'N/A');
+      
       localStorage.setItem('authToken', token);
       localStorage.setItem('user', JSON.stringify(user));
+      
+      // Verify token was stored
+      const storedToken = localStorage.getItem('authToken');
+      console.log('Token stored in localStorage:', storedToken ? 'Yes' : 'No');
+      console.log('Stored token first 10 chars:', storedToken ? storedToken.substring(0, 10) + '...' : 'N/A');
+      
       setCurrentUser(user);
       return true;
     } catch (error) {

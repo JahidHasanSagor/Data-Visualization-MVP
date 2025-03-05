@@ -11,6 +11,8 @@ import Settings from './components/dashboard/Settings';
 import SavedDashboards from './components/SavedDashboards';
 import Analysis from './components/Analysis';
 import LandingPage from './components/landing/LandingPage';
+import IntegrationDashboard from './components/integration/IntegrationDashboard';
+import IntegratedDashboard from './components/dashboard/IntegratedDashboard';
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -83,6 +85,14 @@ function App() {
             </ProtectedRoute>
           } />
           
+          <Route path="/integrated-dashboard" element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <IntegratedDashboard />
+              </DashboardLayout>
+            </ProtectedRoute>
+          } />
+          
           <Route path="/preset-widget" element={
             <ProtectedRoute>
               <DashboardWithLayout>
@@ -136,6 +146,13 @@ function App() {
             <ProtectedRoute>
               <DashboardLayout>
                 <Analysis />
+              </DashboardLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/integrations" element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <IntegrationDashboard />
               </DashboardLayout>
             </ProtectedRoute>
           } />

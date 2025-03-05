@@ -1,4 +1,4 @@
-# Data Visualization MVP
+# ReportVibe MVP
 
 <div align="center">
   <img src="Report Vibe.jpeg" alt="Dashboard Preview" width="80%" />

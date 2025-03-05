@@ -56,7 +56,7 @@ The Meta Ads integration allows you to:
 
 1. Clone the repository
 ```
-git clone https://github.com/yourusername/data-visualization-mvp.git
+git clone https://github.com/JahidHasanSagor/Data-Visualization-MVP.git
 cd data-visualization-mvp
 ```
 

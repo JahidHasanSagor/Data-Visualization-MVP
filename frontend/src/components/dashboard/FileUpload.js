@@ -1,10 +1,13 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useUI } from "../../contexts/UIContext";
+import { UploadService } from "../../services/api.service";
 
-const FileUpload = ({ setUploadedData }) => {
+const uploadService = new UploadService();
+
+const FileUpload = () => {
   const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const { setLoading, showSuccess, showError } = useUI();
   const navigate = useNavigate();
 
   const handleFileChange = (event) => {
@@ -13,27 +16,33 @@ const FileUpload = ({ setUploadedData }) => {
 
   const handleUpload = async () => {
     if (!file) {
-      alert("Please select a file first!");
+      showError("Please select a file first!");
       return;
     }
 
-    setLoading(true);
-    const formData = new FormData();
-    formData.append("file", file);
+    setLoading('file-upload', true);
 
     try {
-      const response = await axios.post("http://127.0.0.1:5000/api/upload", formData);
-      if (setUploadedData) {
-        setUploadedData(response.data);
-        navigate("/dashboard"); // This will navigate to the dashboard route
-      }
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      const response = await uploadService.post('', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      showSuccess("File uploaded successfully!");
+      navigate("/dashboard"); // Navigate to the dashboard route
     } catch (error) {
       console.error("Error uploading file:", error);
-      alert("File upload failed! Please try again.");
+      showError(error.response?.data?.error || "File upload failed! Please try again.");
     } finally {
-      setLoading(false);
+      setLoading('file-upload', false);
     }
   };
+
+  const isLoading = useUI().isLoading('file-upload');
 
   return (
     <div className="p-8 max-w-xl mx-auto bg-white rounded-2xl shadow-lg space-y-6 mt-8 border border-gray-100">
@@ -71,14 +80,22 @@ const FileUpload = ({ setUploadedData }) => {
 
         <button
           onClick={handleUpload}
-          disabled={loading || !file}
+          disabled={isLoading || !file}
           className={`w-full py-3 px-6 rounded-xl font-medium text-white 
-            ${loading || !file 
+            ${isLoading || !file 
               ? 'bg-gray-300 cursor-not-allowed' 
               : 'bg-gradient-to-r from-[#9747FF] to-[#E93D82] hover:opacity-90 transition-opacity'
             }`}
         >
-          {loading ? "Uploading..." : "Upload and Analyze"}
+          {isLoading ? (
+            <div className="flex items-center justify-center">
+              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Uploading...
+            </div>
+          ) : "Upload and Analyze"}
         </button>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { exportAsCSV, exportAsJSON, exportAsExcel } from '../utils/exportData';
 
-const ExportDropdown = ({ data, fileName = 'dashboard-data' }) => {
+const ExportDropdown = ({ chartData, fileName = 'dashboard-data' }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -16,6 +16,52 @@ const ExportDropdown = ({ data, fileName = 'dashboard-data' }) => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  const prepareDataForExport = () => {
+    if (!chartData) return [];
+
+    const exportData = [];
+    const metrics = ['revenue', 'clicks', 'conversions', 'performance'];
+
+    // Get all unique dates from all metrics
+    const allDates = new Set();
+    metrics.forEach(metric => {
+      if (chartData[metric]?.labels) {
+        chartData[metric].labels.forEach(date => allDates.add(date));
+      }
+    });
+
+    // Create a row for each date with all metrics
+    Array.from(allDates).sort().forEach(date => {
+      const row = { date };
+
+      metrics.forEach(metric => {
+        if (chartData[metric]?.datasets?.[0]?.data) {
+          const dateIndex = chartData[metric].labels.indexOf(date);
+          row[metric] = dateIndex >= 0 ? chartData[metric].datasets[0].data[dateIndex] : null;
+        }
+      });
+
+      exportData.push(row);
+    });
+
+    // Add category distribution
+    if (chartData.categories?.labels) {
+      const categoryData = chartData.categories.labels.map((category, index) => ({
+        category,
+        count: chartData.categories.datasets[0].data[index]
+      }));
+      exportData.push({ date: '---Category Distribution---' });
+      categoryData.forEach(item => {
+        exportData.push({
+          date: item.category,
+          value: item.count
+        });
+      });
+    }
+
+    return exportData;
+  };
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -36,19 +82,19 @@ const ExportDropdown = ({ data, fileName = 'dashboard-data' }) => {
         <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
           <div className="py-1">
             <button
-              onClick={() => { exportAsCSV(data, fileName); setIsOpen(false); }}
+              onClick={() => { exportAsCSV(prepareDataForExport(), fileName); setIsOpen(false); }}
               className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
             >
               Export as CSV
             </button>
             <button
-              onClick={() => { exportAsJSON(data, fileName); setIsOpen(false); }}
+              onClick={() => { exportAsJSON(prepareDataForExport(), fileName); setIsOpen(false); }}
               className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
             >
               Export as JSON
             </button>
             <button
-              onClick={() => { exportAsExcel(data, fileName); setIsOpen(false); }}
+              onClick={() => { exportAsExcel(prepareDataForExport(), fileName); setIsOpen(false); }}
               className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
             >
               Export as Excel
